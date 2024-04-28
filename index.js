@@ -25,41 +25,71 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    const newProjectCollection = client
+    const dashboardProjectsCollection = client
       .db("foursquareBD")
-      .collection("newProjects");
+      .collection("dashboardProjects");
 
-    const bannerProjectCollection = client
+    const projectsCollection = client
       .db("foursquareBD")
       .collection("bannerProjects");
 
-    app.get("/dashboard-all-project", async (req, res) => {
-      const result = await newProjectCollection.find().toArray();
+    const productsCollection = client.db("foursquareBD").collection("products");
+    const reviewsCollection = client.db("foursquareBD").collection("reviews");
+
+    app.get("/dashboard-projects", async (req, res) => {
+      const result = await dashboardProjectsCollection.find().toArray();
       res.send(result);
     });
 
-    app.get("/dashboard-all-project/:id", async (req, res) => {
+    app.get("/dashboard-projects/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await newProjectCollection.findOne(query);
+      const result = await dashboardProjectsCollection.findOne(query);
       res.send(result);
     });
 
-    app.post("/add-new-project", async (req, res) => {
+    app.post("/dashboard-projects", async (req, res) => {
       const newProject = req.body;
-      const result = await newProjectCollection.insertOne(newProject);
+      const result = await dashboardProjectsCollection.insertOne(newProject);
       res.send(result);
     });
 
-    app.get("/banner-projects", async (req, res) => {
-      const result = await bannerProjectCollection.find().toArray();
-      res.send(result);
-    });
-
-    app.get("/banner-projects/:id", async (req, res) => {
+    app.delete("/dashboard-projects/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await bannerProjectCollection.findOne(query);
+      const result = await dashboardProjectsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.patch("/dashboard-projects/:id", async (req, res) => {
+      const id = req.params.id;
+      const newInfo = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          title: newInfo.title,
+          startDate: newInfo.startDate,
+          endDate: newInfo.endDate,
+          category: newInfo.category,
+          image: newInfo.image,
+        },
+      };
+      const result = await newTrainersCollection.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
+    app.get("/projects", async (req, res) => {
+      const result = await projectsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/products", async (req, res) => {
+      const result = await productsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/reviews", async (req, res) => {
+      const result = await reviewsCollection.find().toArray();
       res.send(result);
     });
 
