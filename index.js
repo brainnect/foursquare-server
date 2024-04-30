@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 const app = express();
+const fs = require('fs');
 require("dotenv").config();
 const multer  = require('multer')
 const storage = multer.diskStorage({
@@ -82,8 +83,32 @@ async function run() {
     app.delete("/dashboard-projects/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
+      const images = req.body.images;
+      console.log('Deleting images are',images);
+      // delete files
+      const basePath = 'uploads/';
+
+      images.forEach((filename) => {
+      const imagePath = basePath + filename;
+
+      fs.stat(imagePath, (err, stats) => {
+        if (err) {
+          console.error(err);
+          return;
+        }
+
+        fs.unlink(imagePath, (err) => {
+          if (err) {
+            console.error(err);
+          }
+            console.log(`Deleted image: ${filename}`);
+          });
+        });
+      });
+
       const result = await dashboardProjectsCollection.deleteOne(query);
       res.send(result);
+
     });
 
     app.patch("/dashboard-projects/:id", async (req, res) => {
@@ -131,6 +156,51 @@ async function run() {
       }
   
       const result = await dashboardProjectsCollection.insertOne(newProject)
+      res.send(result)
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    })
+
+    app.put("/update-project/:id", upload.array('images', 12), async(req, res) => {
+      try {
+        const updateId = req?.params?.id;
+        const projectInfo = req.body;
+        const imagesArry = req?.files.map(img => img?.filename);
+        const oldImages = projectInfo?.oldImages.split(',');
+        const modifyProject = {
+          title: projectInfo?.title,
+          startDate: projectInfo?.startDate,
+          endDate: projectInfo?.endDate,
+          category: projectInfo?.category,
+          images: imagesArry?.length > 0 ? imagesArry : oldImages
+        }
+        if(imagesArry?.length > 0){
+          const basePath = 'uploads/';
+
+          oldImages.forEach((filename) => {
+           const imagePath = basePath + filename;
+
+          fs.stat(imagePath, (err, stats) => {
+             if (err) {
+             console.error(err);
+            //  return;
+          }
+
+          fs.unlink(imagePath, (err) => {
+            if (err) {
+              console.error(err);
+            }
+              console.log(`Deleted image: ${filename}`);
+          });
+        });
+      });
+        }
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: modifyProject,
+        };
+      const result = await dashboardProjectsCollection.updateOne({_id: new ObjectId(updateId)}, updateDoc, options)
       res.send(result)
       } catch (error) {
         res.status(500).send(error);
