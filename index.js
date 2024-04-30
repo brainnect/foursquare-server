@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
     console.log(file.originalname);
   }
 })
-
+// create a folder
 const upload = multer({ storage: storage })
 
 app.use(
